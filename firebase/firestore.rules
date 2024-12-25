@@ -1,0 +1,126 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function getUserRole() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc.data.role;
+    }
+    
+    function hasRole(role) {
+      let userRole = getUserRole();
+      return userRole == role || 
+        (role == 'user') || 
+        (role == 'moderator' && userRole == 'admin') ||
+        (userRole == 'admin');
+    }
+    
+    function isEventOwner(eventData) {
+      return request.auth.uid == eventData.createdBy;
+    }
+    
+    function isEventMember(eventData) {
+      return request.auth.uid in eventData.members;
+    }
+    
+    function isValidEvent() {
+      let requiredFields = ['title', 'startDate', 'createdBy'];
+      return request.resource.data.keys().hasAll(requiredFields);
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || hasRole('admin'));
+      allow delete: if isAuthenticated() && hasRole('admin');
+    }
+    
+    // Roles
+    match /roles/{roleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && hasRole('admin');
+    }
+    
+    // Events
+    match /events/{eventId} {
+      allow read: if isAuthenticated() && (
+        isEventOwner(resource.data) || 
+        isEventMember(resource.data) ||
+        hasRole('moderator')
+      );
+      allow create: if isAuthenticated() && isValidEvent();
+      allow update: if isAuthenticated() && (
+        isEventOwner(resource.data) ||
+        hasRole('moderator')
+      );
+      allow delete: if isAuthenticated() && (
+        isEventOwner(resource.data) ||
+        hasRole('admin')
+      );
+      
+      // Event guests
+      match /guests/{guestId} {
+        allow read: if isAuthenticated() && (
+          isEventOwner(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          isEventMember(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          hasRole('moderator')
+        );
+        allow write: if isAuthenticated() && (
+          isEventOwner(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          hasRole('moderator')
+        );
+      }
+      
+      // Event messages
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && (
+          isEventOwner(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          isEventMember(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          hasRole('moderator')
+        );
+        allow create: if isAuthenticated() && (
+          isEventOwner(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          isEventMember(get(/databases/$(database)/documents/events/$(eventId)).data)
+        );
+        allow update, delete: if isAuthenticated() && (
+          isEventOwner(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          hasRole('moderator')
+        );
+      }
+      
+      // Event reminders
+      match /reminders/{reminderId} {
+        allow read: if isAuthenticated() && (
+          isEventOwner(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          isEventMember(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          hasRole('moderator')
+        );
+        allow write: if isAuthenticated() && (
+          isEventOwner(get(/databases/$(database)/documents/events/$(eventId)).data) ||
+          hasRole('moderator')
+        );
+      }
+    }
+    
+    // Analytics
+    match /analytics/{docId} {
+      allow read: if isAuthenticated() && hasRole('moderator');
+      allow write: if isAuthenticated() && hasRole('admin');
+    }
+    
+    // Templates
+    match /templates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && hasRole('moderator');
+    }
+  }
+}
