@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   Container,
   Grid,
@@ -27,7 +27,7 @@ import {
   Person as PersonIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
-import { fetchGroups, updateGroup, addGroupMember } from '../store/slices/groupSlice';
+import { fetchGroups, addGroupMember } from '../store/slices/groupSlice';
 import { fetchLists } from '../store/slices/listSlice';
 
 function TabPanel({ children, value, index, ...other }) {

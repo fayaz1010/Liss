@@ -1,138 +1,110 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { Provider } from 'react-redux';
-import store from './store';
-import websocketService from './services/websocket';
+import { useDispatch } from 'react-redux';
+import { Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './config/firebase';
+import { fetchUser } from './store/slices/authSlice';
 
 // Layout Components
 import Layout from './components/layout/Layout';
-import PrivateRoute from './components/routing/PrivateRoute';
+import PrivateRoute from './components/common/PrivateRoute';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Auth Pages
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 // Main Pages
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
 import Groups from './pages/Groups';
 import GroupDetail from './pages/GroupDetail';
-import Lists from './pages/Lists';
-import ListDetail from './pages/ListDetail';
 import Calendar from './pages/Calendar';
-import Profile from './pages/Profile';
 
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-    background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontSize: '2.5rem',
-      fontWeight: 500,
-    },
-    h2: {
-      fontSize: '2rem',
-      fontWeight: 500,
-    },
-    h3: {
-      fontSize: '1.75rem',
-      fontWeight: 500,
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-        },
-      },
-    },
-  },
-});
+import theme from './theme';
 
 function App() {
   const dispatch = useDispatch();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(fetchUser());
-      websocketService.connect();
-    }
-  }, [dispatch, isAuthenticated]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
+      if (user) {
+        console.log('Fetching user data...');
+        dispatch(fetchUser())
+          .unwrap()
+          .then((userData) => {
+            console.log('User data fetched:', userData);
+          })
+          .catch((error) => {
+            console.error('Error fetching user data:', error);
+          });
+      }
+    });
 
-  useEffect(() => {
     return () => {
-      websocketService.disconnect();
+      console.log('Cleaning up auth listener');
+      unsubscribe();
     };
-  }, []);
+  }, [dispatch]);
 
   return (
-    <Provider store={store}>
+    <ErrorBoundary>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Router>
+        <Layout>
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
             {/* Private Routes */}
-            <Route element={<Layout />}>
-              <Route path="/" element={
+            <Route
+              path="/"
+              element={
                 <PrivateRoute>
                   <Dashboard />
                 </PrivateRoute>
-              } />
-              <Route path="/groups" element={
-                <PrivateRoute>
-                  <Groups />
-                </PrivateRoute>
-              } />
-              <Route path="/groups/:id" element={
-                <PrivateRoute>
-                  <GroupDetail />
-                </PrivateRoute>
-              } />
-              <Route path="/lists" element={
-                <PrivateRoute>
-                  <Lists />
-                </PrivateRoute>
-              } />
-              <Route path="/lists/:id" element={
-                <PrivateRoute>
-                  <ListDetail />
-                </PrivateRoute>
-              } />
-              <Route path="/calendar" element={
-                <PrivateRoute>
-                  <Calendar />
-                </PrivateRoute>
-              } />
-              <Route path="/profile" element={
+              }
+            />
+            <Route
+              path="/profile"
+              element={
                 <PrivateRoute>
                   <Profile />
                 </PrivateRoute>
-              } />
-            </Route>
+              }
+            />
+            <Route
+              path="/groups"
+              element={
+                <PrivateRoute>
+                  <Groups />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/groups/:id"
+              element={
+                <PrivateRoute>
+                  <GroupDetail />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <PrivateRoute>
+                  <Calendar />
+                </PrivateRoute>
+              }
+            />
           </Routes>
-        </Router>
+        </Layout>
       </ThemeProvider>
-    </Provider>
+    </ErrorBoundary>
   );
 }
 

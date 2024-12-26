@@ -1,31 +1,27 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import {
   Container,
   Grid,
   Paper,
   Typography,
+  Avatar,
+  Button,
   Box,
   TextField,
-  Button,
-  Avatar,
-  Tabs,
-  Tab,
+  CircularProgress,
+  Divider,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
-  Divider,
-  CircularProgress,
-  Alert,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
+  Person as PersonIcon,
   Group as GroupIcon,
   ListAlt as ListIcon,
-  Event as EventIcon,
 } from '@mui/icons-material';
 import FileUpload from '../components/common/FileUpload';
 
@@ -42,7 +38,6 @@ const Profile = () => {
   });
   const [error, setError] = useState(null);
 
-  const dispatch = useDispatch();
   const { user, loading } = useSelector((state) => state.auth);
   const { groups } = useSelector((state) => state.groups);
   const { lists } = useSelector((state) => state.lists);
@@ -121,7 +116,7 @@ const Profile = () => {
                   variant="outlined"
                   size="small"
                   onClick={handleEdit}
-                  startIcon={<EditIcon />}
+                  startIcon={<PersonIcon />}
                 >
                   Edit Profile
                 </Button>
@@ -130,7 +125,7 @@ const Profile = () => {
             
             {editing ? (
               <Box component="form" onSubmit={handleSubmit}>
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
                 
                 <FileUpload
                   onUpload={handleProfilePictureUpload}
@@ -210,14 +205,14 @@ const Profile = () => {
                   <Button
                     type="submit"
                     variant="contained"
-                    startIcon={<SaveIcon />}
+                    startIcon={<PersonIcon />}
                     sx={{ mr: 1 }}
                   >
                     Save
                   </Button>
                   <Button
                     onClick={handleCancel}
-                    startIcon={<CancelIcon />}
+                    startIcon={<PersonIcon />}
                   >
                     Cancel
                   </Button>

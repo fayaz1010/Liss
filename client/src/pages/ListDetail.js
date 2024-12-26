@@ -32,8 +32,8 @@ import {
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { 
   fetchLists, 
-  createListItem, 
-  updateListItem, 
+  createItem, 
+  updateItemProgress, 
   updateList 
 } from '../store/slices/listSlice';
 
@@ -89,16 +89,12 @@ const ListDetail = () => {
   };
 
   const handleCreateItem = async () => {
-    await dispatch(createListItem({ listId: id, itemData }));
+    await dispatch(createItem({ listId: id, itemData }));
     handleCloseNewItem();
   };
 
   const handleProgressChange = async (itemId, newValue) => {
-    await dispatch(updateListItem({
-      listId: id,
-      itemId,
-      itemData: { progress: newValue },
-    }));
+    await dispatch(updateItemProgress({ listId: id, itemId, progress: newValue }));
   };
 
   const handleDragEnd = async (result) => {

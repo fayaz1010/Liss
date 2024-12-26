@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
-  AttachFile as FileIcon,
   Delete as DeleteIcon,
   Image as ImageIcon,
   PictureAsPdf as PdfIcon,

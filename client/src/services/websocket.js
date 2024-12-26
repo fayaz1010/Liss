@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import { store } from '../store';
+import store from '../store';
 import { addMessage } from '../store/slices/chatSlice';
 import { addNotification } from '../store/slices/notificationSlice';
 import { updateProgress } from '../store/slices/listSlice';

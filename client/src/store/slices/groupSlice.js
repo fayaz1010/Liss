@@ -67,6 +67,7 @@ const initialState = {
   currentGroup: null,
   loading: false,
   error: null,
+  posts: {},
 };
 
 const groupSlice = createSlice({
@@ -78,6 +79,30 @@ const groupSlice = createSlice({
     },
     setCurrentGroup: (state, action) => {
       state.currentGroup = action.payload;
+    },
+    addPost: (state, action) => {
+      const { groupId, post } = action.payload;
+      if (!state.posts[groupId]) {
+        state.posts[groupId] = [];
+      }
+      state.posts[groupId].push(post);
+    },
+    updatePost: (state, action) => {
+      const { groupId, postId, updates } = action.payload;
+      const posts = state.posts[groupId];
+      if (posts) {
+        const postIndex = posts.findIndex(post => post.id === postId);
+        if (postIndex !== -1) {
+          posts[postIndex] = { ...posts[postIndex], ...updates };
+        }
+      }
+    },
+    removePost: (state, action) => {
+      const { groupId, postId } = action.payload;
+      const posts = state.posts[groupId];
+      if (posts) {
+        state.posts[groupId] = posts.filter(post => post.id !== postId);
+      }
     },
   },
   extraReducers: (builder) => {
@@ -109,7 +134,12 @@ const groupSlice = createSlice({
         state.error = action.payload.message;
       })
       // Update group
+      .addCase(updateGroup.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(updateGroup.fulfilled, (state, action) => {
+        state.loading = false;
         const index = state.groups.findIndex(group => group._id === action.payload._id);
         if (index !== -1) {
           state.groups[index] = action.payload;
@@ -118,15 +148,34 @@ const groupSlice = createSlice({
           state.currentGroup = action.payload;
         }
       })
+      .addCase(updateGroup.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload.message;
+      })
       // Delete group
+      .addCase(deleteGroup.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(deleteGroup.fulfilled, (state, action) => {
+        state.loading = false;
         state.groups = state.groups.filter(group => group._id !== action.payload);
         if (state.currentGroup?._id === action.payload) {
           state.currentGroup = null;
         }
+        delete state.posts[action.payload];
+      })
+      .addCase(deleteGroup.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload.message;
       })
       // Add member
+      .addCase(addGroupMember.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(addGroupMember.fulfilled, (state, action) => {
+        state.loading = false;
         const group = state.groups.find(g => g._id === action.payload._id);
         if (group) {
           group.members = action.payload.members;
@@ -134,9 +183,13 @@ const groupSlice = createSlice({
         if (state.currentGroup?._id === action.payload._id) {
           state.currentGroup.members = action.payload.members;
         }
+      })
+      .addCase(addGroupMember.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload.message;
       });
   },
 });
 
-export const { clearGroupError, setCurrentGroup } = groupSlice.actions;
+export const { clearGroupError, setCurrentGroup, addPost, updatePost, removePost } = groupSlice.actions;
 export default groupSlice.reducer;
