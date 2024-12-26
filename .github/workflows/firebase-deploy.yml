@@ -1,0 +1,34 @@
+name: Firebase Deploy
+
+on:
+  push:
+    branches:
+      - main  # Adjust this to your main branch name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'  # Use the Node.js version your project uses
+    
+    - name: Install Dependencies
+      run: |
+        npm ci  # Use npm ci for more reliable dependency installation
+    
+    - name: Build Project
+      run: npm run build  # Adjust this to your build script
+    
+    - name: Deploy to Firebase
+      uses: w9jds/firebase-action@master
+      with:
+        args: deploy --only hosting,firestore,functions
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        PROJECT_ID: liss-79329
